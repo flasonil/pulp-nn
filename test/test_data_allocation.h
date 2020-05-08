@@ -32,8 +32,8 @@
 	RT_L1_DATA int8_t input_data_int8_L1[(IFM_W * IFM_H * IFM_CH)];
 	RT_L1_DATA int8_t conv_wt_int8_L1[(IFM_CH * DIM_KER * DIM_KER * OFM_CH)];
 	RT_L1_DATA int8_t conv_bias_int8_L1[OFM_CH];
-	RT_L1_DATA int8_t col_buffer[(2 * NUM_CORES * IFM_CH * DIM_KER  * DIM_KER)];
-	RT_L1_DATA int8_t conv_int8_out_L1[(OFM_CH* OFM_W * OFM_H)];
+	RT_L1_DATA int8_t col_buffer[(2 * NUM_CORES * IFM_CH * DIM_KER  * DIM_KER)+64] __attribute__ ((aligned (64)));
+	RT_L1_DATA int8_t conv_int8_out_L1[(OFM_CH* OFM_W * OFM_H)+64] __attribute__ ((aligned (64)));
 	#endif
 
 #endif

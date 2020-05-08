@@ -34,6 +34,7 @@ endif
 PULP_CFLAGS += -DTEST=$(test) -DNUM_CORES=$(cores) -DQ$(Q) -O3  -Iinc -w
 PULP_LDFLAGS = -lm 
 
-
+# LOCKSTEP MODE
+ PULP_CFLAGS += -DLOCKSTEP
 
 include $(PULP_SDK_HOME)/install/rules/pulp_rt.mk

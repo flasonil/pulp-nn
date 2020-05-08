@@ -72,6 +72,7 @@ int8_t __attribute__ ((noinline)) *pulp_nn_matmul_4x2_int8(
 			int8_t *pA2 = (pA + numCol_A);
 			int8_t *pA3 = (pA2 + numCol_A);
 			int8_t *pA4 = (pA3 + numCol_A);
+//printf("%x   %x   %x   %x\n",pA,pA2,pA3,pA4);
 
 			int bias1 = ((int) (*bias++)  << bias_shift) + NN_ROUND(out_shift);
 			int bias2 = ((int) (*bias++)  << bias_shift) + NN_ROUND(out_shift);
@@ -116,7 +117,7 @@ int8_t __attribute__ ((noinline)) *pulp_nn_matmul_4x2_int8(
 				pB  += 4;
 				pB2 += 4;
 			}
-
+//
 			while(colCnt) //for (int i=0; i< colCnt; i++)
 			{
 
@@ -137,7 +138,7 @@ int8_t __attribute__ ((noinline)) *pulp_nn_matmul_4x2_int8(
 				sum8 += inA4 * inB2;
 
 				colCnt--;
-			}
+			}//
 
 			*pOut  = (int8_t)  CLIP8( sum  >> out_shift);
 			pOut++;
@@ -159,7 +160,7 @@ int8_t __attribute__ ((noinline)) *pulp_nn_matmul_4x2_int8(
 
 			pA +=  3 * numCol_A;
 		}
-
+//
 		while(chan_left)
 		{
 			int8_t *pB  =  pInBuffer ;
@@ -203,7 +204,8 @@ int8_t __attribute__ ((noinline)) *pulp_nn_matmul_4x2_int8(
 			pOut2++;
 
 			chan_left--;
-		}
+		}//
 		pOut +=   ch_im_out;
 		return pOut;
 	}
+

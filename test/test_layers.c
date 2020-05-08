@@ -47,7 +47,7 @@
 /* layer parameters */
 #ifdef CONV_LAYER_TEST
 	#ifdef Q8
-		#include "./layer_parameters/int8_conv_layer_parameters_corner_nosquare2.h"
+		#include "./layer_parameters/int8_conv_layer_parameters.h"
 	#endif
 #endif
 
@@ -133,46 +133,58 @@ int test_layers(rt_perf_t *perf)
 	rt_team_barrier();
 
 	/* Convolution layer execution */
+//#ifdef PROFILING
+	/* These functions allow for a complete profiling of the kernel execution */
+	/* Defined in "stats.h" header. See file for complete info                */
+//	INIT_PROFILING();
+//	START_PROFILING();
+//#endif
+
+#ifdef Q8
+
 #ifdef PROFILING
 	/* These functions allow for a complete profiling of the kernel execution */
 	/* Defined in "stats.h" header. See file for complete info                */
 	INIT_PROFILING();
 	START_PROFILING();
 #endif
-
-	rt_team_barrier();
-
-#ifdef Q8
 	pulp_nn_convolution_nosquare_asympad_int8(input_data_int8_L1, IFM_W, IFM_H, IFM_CH,conv_wt_int8_L1, OFM_CH, DIM_KER, DIM_KER, PADDING, PADDING, PADDING, PADDING,
 															STRIDE, STRIDE, conv_bias_int8_L1, BIAS_SHIFT, QUANT_FACTOR, conv_int8_out_L1, OFM_W, OFM_H,col_buffer, NULL);
+
+#ifdef PROFILING
+	STOP_PROFILING();
+#endif
+
 	//pulp_nn_convolution_int8(input_data_int8_L1, IFM_H, IFM_CH, conv_wt_int8_L1, OFM_CH, DIM_KER, PADDING,
 	//										STRIDE, conv_bias_int8_L1, BIAS_SHIFT, QUANT_FACTOR, conv_int8_out_L1, OFM_H, col_buffer, NULL,NULL);
 	//pulp_nn_dw_convolution_int8(input_data_int8_L1, IFM_W, IFM_CH, conv_wt_int8_L1,OFM_CH, DIM_KER,PADDING,STRIDE, conv_bias_int8_L1,BIAS_SHIFT, QUANT_FACTOR,
 	//													conv_int8_out_L1, OFM_W,col_buffer, NULL);
 #endif
 
-#ifdef PROFILING
-	STOP_PROFILING();
-#endif
-
-	rt_team_barrier();
+//#ifdef PROFILING
+//	STOP_PROFILING();
+//#endif
 
 #ifdef CHECKLAYER
 
 	if(rt_core_id()==0)
 	{
-		rt_dma_copy_t cp3;
+		/*rt_dma_copy_t cp3;
 		rt_dma_memcpy(
 #ifdef Q8
 			conv_int8_out_L2, // ext
 			conv_int8_out_L1, // loc
-			OFM_W * OFM_H * OFM_CH, // size
+			(OFM_W * OFM_H * OFM_CH), // size
 #endif
 			RT_DMA_DIR_LOC2EXT, // dir
 			0, // merge
 			&cp3 // copy
 			);
-	    rt_dma_wait(&cp3);
+	    rt_dma_wait(&cp3);*/
+for(int i = 0; i < 8;i ++) {
+for(int j = 0;j < 2048; j++){
+conv_int8_out_L2[j+(i*2048)]=conv_int8_out_L1[j+(i*2048)+(i*4)];
+}}
 
 	    int errors=0;
 	    for (int i=0; i< OFM_CH * OFM_W * OFM_H; i++)

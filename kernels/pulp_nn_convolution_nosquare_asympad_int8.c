@@ -21,11 +21,13 @@
 
 
 #include "rt/rt_api.h"
+#include "../test/stats.h"
 
 #define SumDotp(a, b, c)            __builtin_pulp_sdotsp4(a, b, c)
 #define NN_ROUND(out_shift)         ((out_shift) ? (0x1 << (out_shift -1)) : (0))
 #define MIN(a,b)                    ((a)<(b)?(a):(b))
 #define CLIP8(x)                    __builtin_pulp_clip(x,-128, 127)
+#define LOCKSTEP_ADDRESS						0x10204400
 
 /*degree of freedom: if defined the 4x2 MatMul kernel is used. */
 /* default: 2x2 kernel. */
@@ -136,11 +138,11 @@ void __attribute__ ((noinline)) pulp_nn_convolution_nosquare_asympad_int8(
   int8_t * bufferC,
   int8_t * bufferB)
   {
-
+//rt_team_barrier();
     /* parallelization */
     int core_id = rt_core_id();
-    int8_t * bufferA = bufferC  + (2*core_id*ch_im_in*dim_kernel_x*dim_kernel_y);
-
+    int8_t * bufferA = bufferC  + (2*core_id*ch_im_in*dim_kernel_x*dim_kernel_y) + (4*core_id);
+//printf("%x\n",bufferA);
     // local vars
     int16_t i_out_y, i_out_x, i_ker_y, i_ker_x;
     int Log2Core = __builtin_pulp_fl1(NUM_CORES);
@@ -153,7 +155,7 @@ void __attribute__ ((noinline)) pulp_nn_convolution_nosquare_asympad_int8(
     start_pixel = MIN(chunck *  core_id, dim_im_out_y);
     stop_pixel = MIN(start_pixel+chunck, dim_im_out_y);
     int8_t *pBuffer = bufferA;
-    int8_t  *pOut    = Im_out + start_pixel * ch_im_out * dim_im_out_x;
+    int8_t  *pOut    = Im_out + start_pixel * ch_im_out * dim_im_out_x + (4*core_id);
 
     /* start kernel: this first phase is devoted to building the im2col buffers */
     for (i_out_y = start_pixel; i_out_y < stop_pixel; i_out_y++)
@@ -253,15 +255,28 @@ void __attribute__ ((noinline)) pulp_nn_convolution_nosquare_asympad_int8(
               pBuffer += ch_im_in;
             }
           }
-        }
+        }//TERZO IFELSE
 
         /* when im2col buffers are built start the dot product computation */
         /* i.e. matrix multiplication kernel */
         if (pBuffer == bufferA + 2 * ch_im_in * dim_kernel_x * dim_kernel_y)
         {
+					#ifdef LOCKSTEP
+					rt_team_barrier();
+					// IF-LOCKSTEP=0x00000001
+					// ID-LOCKSTEP=0x00000002
+					// MANCANO DEFINE
+					*(volatile int*)LOCKSTEP_ADDRESS = 0x00000001;
+					#endif
           pOut = pulp_nn_matmul_4x2_int8(wt, bufferA, ch_im_out, ch_im_in * dim_kernel_x * dim_kernel_y, bias_shift, out_shift, bias, pOut);
+					#ifdef LOCKSTEP
+					*(volatile int*)LOCKSTEP_ADDRESS = 0x00000000;
+					asm("NOP");
+					asm("NOP");
+					#endif
           pBuffer = bufferA;
         }
+
       }
     }
 
@@ -300,7 +315,6 @@ void __attribute__ ((noinline)) pulp_nn_convolution_nosquare_asympad_int8(
       }
 
     }
-
     // final synch barrier
     rt_team_barrier();
   }

@@ -44,7 +44,8 @@ for (int k=0; k < 13; k++) { \
     rt_perf_reset(&perf2);						\
     rt_perf_stop(&perf2);						\
     rt_perf_start(&perf2); \
-			    }
+			    }\
+rt_team_barrier();
 
 #define STOP_PROFILING() \
        if( (k>=3 )) { \
@@ -68,3 +69,4 @@ for (int k=0; k < 13; k++) { \
 #define START_PROFILING()
 #define STOP_PROFILING()
 #endif
+
